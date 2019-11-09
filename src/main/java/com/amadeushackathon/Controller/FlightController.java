@@ -2,6 +2,7 @@ package com.amadeushackathon.Controller;
 
 
 import com.amadeushackathon.Enum.AMADEUS_LINK;
+import com.amadeushackathon.Model.FlightHelper;
 import com.google.gson.Gson;
 import com.oracle.javafx.jmx.json.JSONException;
 import org.json.JSONArray;
@@ -153,8 +154,8 @@ public class FlightController {
     }
 
     @CrossOrigin()
-    @GetMapping("/offer-search/{fromCountry}/{toCountry}/{departureDate}/{adults}")
-    public String getFlightsInRange(@PathVariable String fromCountry,@PathVariable String toCountry,@PathVariable String departureDate,@PathVariable String adults) {
+    @GetMapping("/offer-search/{fromCountry}/{toCountry}/{departureDate}/{adults}/{page}")
+    public String getFlightsInRange(@PathVariable String fromCountry,@PathVariable String toCountry,@PathVariable String departureDate,@PathVariable String adults, @PathVariable String page) {
 
         String URLink = "";
 
@@ -191,9 +192,48 @@ public class FlightController {
             conn.disconnect();
 
             try {
+
+                int pagination = 0;
+
+                switch (Integer.valueOf(page)){
+
+                    case 1:
+                        pagination = 5;
+                        break;
+                    case 2:
+                        pagination = 10;
+                        break;
+
+                    default:
+                        pagination = 5;
+                }
+
+                JSONObject reducedData = new JSONObject();
                 JSONObject obj = new JSONObject(sb.toString());
 
-                return obj.toString();
+                JSONArray data = obj.getJSONArray("data");
+
+                for(int i = 0; i < pagination; i++){
+
+
+                    String bookableSeats = data.getJSONObject(i).getString("numberOfBookableSeats");
+                    String total = data.getJSONObject(i).getJSONObject("price").getString("total");
+                    String currency = data.getJSONObject(i).getJSONObject("price").getString("currency");
+                    String airline = data.getJSONObject(i).getJSONArray("validatingAirlineCodes").getString(0);
+
+
+                    JSONObject flightRecord = new JSONObject();
+
+                    flightRecord.put("seatsAvailable",bookableSeats);
+                    flightRecord.put("total",total);
+                    flightRecord.put("currency",currency);
+                    flightRecord.put("airline",FlightHelper.getAirlineName(airline));
+
+
+                    reducedData.accumulate(String.valueOf(i), flightRecord);
+                }
+
+                return reducedData.toString();
 
             }catch (Exception ex){
                 System.out.println(ex.getMessage());
@@ -201,15 +241,24 @@ public class FlightController {
 
         } catch (MalformedURLException e) {
 
-
             e.printStackTrace();
 
         } catch (IOException e) {
 
             e.printStackTrace();
         }
-        
+
         return URLink;
 
     }
+
+    @CrossOrigin()
+    @GetMapping("/code/{airlineCode}")
+    public String getAirlineName(@PathVariable String airlineCode){
+
+        return FlightHelper.getAirlineName(airlineCode);
+
+    }
+
+
 }
