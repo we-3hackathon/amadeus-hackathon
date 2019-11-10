@@ -211,6 +211,10 @@ public class FlightController {
                 JSONObject reducedData = new JSONObject();
                 JSONObject obj = new JSONObject(sb.toString());
 
+
+                JSONArray results = new JSONArray();
+
+
                 JSONArray data = obj.getJSONArray("data");
 
                 for(int i = 0; i < pagination; i++){
@@ -224,14 +228,21 @@ public class FlightController {
 
                     JSONObject flightRecord = new JSONObject();
 
+
+
                     flightRecord.put("seatsAvailable",bookableSeats);
                     flightRecord.put("total",total);
                     flightRecord.put("currency",currency);
                     flightRecord.put("airline",FlightHelper.getAirlineName(airline));
 
 
-                    reducedData.accumulate(String.valueOf(i), flightRecord);
+                    results.put(i,flightRecord);
+
+
+
                 }
+                reducedData.accumulate("results", results);
+
 
                 return reducedData.toString();
 
